@@ -1,10 +1,4 @@
 # Starts, stops or checks the project-local MongoDB (no system service needed).
-# Uses the mongod binary cached by mongodb-memory-server (with app-local VC runtime
-# DLLs beside it when the system VC++ Redistributable is absent).
-#
-#   npm run mongo:start
-#   npm run mongo:stop
-#   npm run mongo:status
 param([string]$Action = "start")
 
 $ErrorActionPreference = "Stop"
@@ -51,7 +45,7 @@ switch ($Action) {
         if (Get-NetTCPConnection -LocalPort 27017 -State Listen -ErrorAction SilentlyContinue) {
             Write-Host "MongoDB started on 127.0.0.1:27017 (db: $dbPath)"
         } else {
-            Write-Error "MongoDB failed to start — see $logPath"
+            Write-Error "MongoDB failed to start - see $logPath"
             exit 1
         }
     }
