@@ -2,10 +2,13 @@
  * Tiny fetch wrapper: JSON in/out, cookie-based auth, friendly errors.
  */
 export async function api(path, { method = 'GET', body, formData } = {}) {
+  const baseURL = import.meta.env.VITE_API_URL || '';
+  const url = baseURL ? `${baseURL}${path}` : path;
+
   const headers = {};
   if (body) headers['Content-Type'] = 'application/json';
 
-  const res = await fetch(path, {
+  const res = await fetch(url, {
     method,
     headers,
     credentials: 'include',
