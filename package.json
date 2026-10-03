@@ -1,0 +1,22 @@
+{
+  "name": "constructtrace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Detect jingle and jangle fallacies in academic research with AI-assisted, human-approved analysis.",
+  "scripts": {
+    "install:all": "npm install --prefix server && npm install --prefix client && npm install",
+    "dev": "concurrently -n server,client -c blue,magenta \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "seed": "npm run seed --prefix server",
+    "smoke": "node scripts/smoke.mjs",
+    "make:sample": "node server/scripts/make-sample-pdf.mjs",
+    "mongo:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mongo.ps1 start",
+    "mongo:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mongo.ps1 stop",
+    "mongo:status": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mongo.ps1 status",
+    "test": "npm test --prefix server",
+    "build": "npm run build --prefix client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "puppeteer-core": "^25.12.0"
+  }
+}
