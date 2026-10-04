@@ -25,7 +25,13 @@ export async function uploadPdf(objectName, buffer) {
     contentType: 'application/pdf',
     upsert: false,
   });
-  if (error) throw new Error(`Supabase upload failed: ${error.message}`);
+  if (error) {
+    const hint =
+      /row-level security policy/i.test(error.message)
+        ? ' Use the Supabase service_role key in SUPABASE_SERVICE_ROLE_KEY, or add a Storage INSERT policy for this bucket.'
+        : '';
+    throw new Error(`Supabase upload failed: ${error.message}.${hint}`);
+  }
 }
 
 export async function downloadPdf(objectName) {

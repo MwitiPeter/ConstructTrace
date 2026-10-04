@@ -15,6 +15,9 @@ export function buildApp() {
   const app = express();
 
   app.disable('x-powered-by');
+  // Render terminates TLS and forwards the client address in X-Forwarded-For.
+  // Trust only the first proxy hop so rate limiting receives the real client IP.
+  app.set('trust proxy', 1);
   app.use((_req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
