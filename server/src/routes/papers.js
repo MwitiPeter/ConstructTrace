@@ -13,6 +13,13 @@ import { ownedProject, ownedPaper, logEvent } from '../utils/scope.js';
 import { extractPdfPages } from '../services/pdf.js';
 import { extractPaperConstructs } from '../services/extraction.js';
 import { compareProject } from '../services/compare.js';
+import {
+  downloadPdf,
+  removeStoredObject,
+  uploadPdf,
+  isSupabaseObject,
+  usesSupabaseStorage,
+} from '../services/storage.js';
 import { normalizeWs, splitPages } from '../utils/text.js';
 
 const router = Router();
@@ -73,13 +80,14 @@ router.post(
     if (!req.file) throw new HttpError(400, 'Attach a PDF file in the "file" field.');
 
     let pages = [];
+    let buffer;
     try {
-      const buffer = await fs.promises.readFile(req.file.path);
+      buffer = await fs.promises.readFile(req.file.path);
       const result = await extractPdfPages(buffer);
       pages = result.pages;
       if (!pages.length) throw new Error('no extractable text');
     } catch (err) {
-      removeStoredFile(req.file.filename);
+      await removeStoredFile(req.file.filename);
       throw new HttpError(
         422,
         `Could not read text from this PDF (${err.message}). Image-only/scanned PDFs are not supported — use "paste text" instead.`
@@ -88,6 +96,17 @@ router.post(
 
     const fallbackName = path.basename(req.file.originalname, path.extname(req.file.originalname));
     const title = (normalizeWs(req.body?.title) || fallbackName || 'Untitled paper').slice(0, 300);
+    const storedName = usesSupabaseStorage
+      ? `papers/${req.user.id}/${Date.now()}-${req.file.filename}`
+      : req.file.filename;
+
+    try {
+      await uploadPdf(storedName, buffer);
+      if (usesSupabaseStorage) await removeStoredFile(req.file.filename);
+    } catch (err) {
+      await removeStoredFile(req.file.filename);
+      throw new HttpError(502, `Could not store this PDF: ${err.message}`);
+    }
 
     const paper = await Paper.create({
       projectId: project._id,
@@ -101,7 +120,7 @@ router.post(
       pages,
       file: {
         originalName: req.file.originalname,
-        storedName: req.file.filename,
+        storedName,
         sizeBytes: req.file.size,
       },
     });
@@ -194,13 +213,22 @@ router.get(
   asyncHandler(async (req, res) => {
     const paper = await ownedPaper(req.user.id, req.params.paperId);
     if (!paper.file?.storedName) throw new HttpError(404, 'This paper has no stored PDF file.');
-    const filePath = path.join(env.uploadsDir, path.basename(paper.file.storedName));
-    if (!fs.existsSync(filePath)) throw new HttpError(404, 'Stored PDF file is missing.');
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
       `inline; filename="${(paper.file.originalName || 'paper.pdf').replace(/["\\]/g, '')}"`
     );
+    if (isSupabaseObject(paper.file.storedName)) {
+      try {
+        const buffer = await downloadPdf(paper.file.storedName);
+        res.end(buffer);
+      } catch (err) {
+        throw new HttpError(404, `Stored PDF file is unavailable: ${err.message}`);
+      }
+      return;
+    }
+    const filePath = path.join(env.uploadsDir, path.basename(paper.file.storedName));
+    if (!fs.existsSync(filePath)) throw new HttpError(404, 'Stored PDF file is missing.');
     fs.createReadStream(filePath).pipe(res);
   })
 );
@@ -233,7 +261,11 @@ router.delete(
       await Suggestion.deleteMany({ constructIds: { $in: idList } });
       await Construct.deleteMany({ paperId: paper._id });
     }
-    removeStoredFile(paper.file?.storedName);
+    if (isSupabaseObject(paper.file?.storedName)) {
+      await removeStoredObject(paper.file?.storedName);
+    } else {
+      await removeStoredFile(paper.file?.storedName);
+    }
     await Paper.deleteOne({ _id: paper._id });
 
     await logEvent({

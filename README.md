@@ -344,16 +344,18 @@ empty for local development, where Vite proxies `/api` to the local server.
 - Health check path: `/api/health`
 - Required environment variables: `NODE_ENV=production`, `MONGODB_URI`, `JWT_SECRET`,
   and `CLIENT_ORIGIN=https://<your-vercel-app>.vercel.app`
-- For persistent PDF uploads, attach a Render Persistent Disk mounted at
-  `/var/data` and set `UPLOADS_DIR=/var/data/uploads`
+- For persistent PDF uploads with Supabase Storage, set `SUPABASE_URL`,
+  `SUPABASE_SERVICE_ROLE_KEY`, and `SUPABASE_STORAGE_BUCKET=papers` in Render.
+- If Supabase variables are absent, the backend falls back to local disk storage. On
+  Render that storage is ephemeral, so use Supabase for deployed uploads.
 - Optional AI variables: `AI_PROVIDER=hf`, `HF_TOKEN`, `HF_MODEL`, `HF_API_URL`, and
   `HF_EMBEDDING_URL`; `AI_PROVIDER=rule` is the default and needs no external token.
 
 Production authentication uses secure cross-site cookies because the frontend and API
-are hosted on different domains. Without `UPLOADS_DIR`, uploaded PDFs use the local
-service filesystem and are ephemeral on Render. A Persistent Disk mounted at
-`/var/data` makes them survive service restarts and redeployments for this single
-backend service. The disk is tied to that service and should be backed up separately.
+are hosted on different domains. Supabase bucket access remains private: the backend
+checks paper ownership before downloading or deleting a PDF. Keep
+`SUPABASE_SERVICE_ROLE_KEY` only in Render environment variables; never expose it to
+the frontend.
 
 ---
 

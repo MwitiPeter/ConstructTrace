@@ -9,6 +9,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { requireBody, assertLength } from '../middleware/validate.js';
 import { ownedProject, logEvent } from '../utils/scope.js';
 import { removeStoredFile } from '../middleware/upload.js';
+import { isSupabaseObject, removeStoredObject } from '../services/storage.js';
 import { constructsToCsv, suggestionsToCsv, buildExportJson } from '../services/export.js';
 
 const router = Router();
@@ -143,7 +144,13 @@ router.delete(
   asyncHandler(async (req, res) => {
     const project = await ownedProject(req.user.id, req.params.id);
     const papers = await Paper.find({ projectId: project._id }).select('file.storedName').lean();
-    for (const p of papers) removeStoredFile(p.file?.storedName);
+    for (const p of papers) {
+      if (isSupabaseObject(p.file?.storedName)) {
+        await removeStoredObject(p.file?.storedName);
+      } else {
+        await removeStoredFile(p.file?.storedName);
+      }
+    }
 
     await Promise.all([
       Paper.deleteMany({ projectId: project._id }),

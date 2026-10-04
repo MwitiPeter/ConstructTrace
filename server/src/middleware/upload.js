@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import multer from 'multer';
 import { env } from '../config/env.js';
 import { HttpError } from './error.js';
+import { removeLocalFile } from '../services/storage.js';
 
 fs.mkdirSync(env.uploadsDir, { recursive: true });
 
@@ -30,11 +31,4 @@ export const upload = multer({
 });
 
 /** Removes a stored upload file, ignoring errors. */
-export function removeStoredFile(storedName) {
-  if (!storedName) return;
-  try {
-    fs.unlinkSync(path.join(env.uploadsDir, path.basename(storedName)));
-  } catch {
-    /* already gone */
-  }
-}
+export const removeStoredFile = removeLocalFile;

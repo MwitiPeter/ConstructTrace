@@ -31,6 +31,9 @@ export const env = {
     process.env.HF_EMBEDDING_URL ||
     'https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2',
   uploadsDir: path.resolve(process.env.UPLOADS_DIR || path.resolve(__dirname, '../../uploads')),
+  supabaseUrl: process.env.SUPABASE_URL || '',
+  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+  supabaseStorageBucket: process.env.SUPABASE_STORAGE_BUCKET || 'papers',
 };
 
 /** Cookie max-age derived from JWT_EXPIRES_IN (supports Nd / Nh / Nm / plain seconds). */
