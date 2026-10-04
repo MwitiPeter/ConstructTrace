@@ -27,6 +27,16 @@ router.use(requireAuth);
 
 const MAX_TEXT_CHARS = 400000;
 
+async function cleanupUpload(localName, objectName = '') {
+  try {
+    await removeStoredFile(localName);
+    if (isSupabaseObject(objectName)) await removeStoredObject(objectName);
+  } catch (cleanupError) {
+    // eslint-disable-next-line no-console
+    console.error('[upload cleanup] Failed to remove an incomplete PDF upload:', cleanupError.message);
+  }
+}
+
 /** Auto-run comparison once a project has at least two analyzed papers. */
 async function maybeAutoCompare(project) {
   try {
@@ -76,8 +86,15 @@ router.post(
   '/projects/:projectId/papers',
   upload.single('file'),
   asyncHandler(async (req, res) => {
-    const project = await ownedProject(req.user.id, req.params.projectId);
     if (!req.file) throw new HttpError(400, 'Attach a PDF file in the "file" field.');
+
+    let project;
+    try {
+      project = await ownedProject(req.user.id, req.params.projectId);
+    } catch (err) {
+      await cleanupUpload(req.file.filename);
+      throw err;
+    }
 
     let pages = [];
     let buffer;
@@ -87,7 +104,7 @@ router.post(
       pages = result.pages;
       if (!pages.length) throw new Error('no extractable text');
     } catch (err) {
-      await removeStoredFile(req.file.filename);
+      await cleanupUpload(req.file.filename);
       throw new HttpError(
         422,
         `Could not read text from this PDF (${err.message}). Image-only/scanned PDFs are not supported — use "paste text" instead.`
@@ -104,26 +121,32 @@ router.post(
       await uploadPdf(storedName, buffer);
       if (usesSupabaseStorage) await removeStoredFile(req.file.filename);
     } catch (err) {
-      await removeStoredFile(req.file.filename);
+      await cleanupUpload(req.file.filename, storedName);
       throw new HttpError(502, `Could not store this PDF: ${err.message}`);
     }
 
-    const paper = await Paper.create({
-      projectId: project._id,
-      userId: req.user.id,
-      title,
-      authors: String(req.body?.authors || '').slice(0, 500),
-      year: String(req.body?.year || '').slice(0, 20),
-      sourceType: 'pdf',
-      status: 'parsed',
-      pageCount: pages.length,
-      pages,
-      file: {
-        originalName: req.file.originalname,
-        storedName,
-        sizeBytes: req.file.size,
-      },
-    });
+    let paper;
+    try {
+      paper = await Paper.create({
+        projectId: project._id,
+        userId: req.user.id,
+        title,
+        authors: String(req.body?.authors || '').slice(0, 500),
+        year: String(req.body?.year || '').slice(0, 20),
+        sourceType: 'pdf',
+        status: 'parsed',
+        pageCount: pages.length,
+        pages,
+        file: {
+          originalName: req.file.originalname,
+          storedName,
+          sizeBytes: req.file.size,
+        },
+      });
+    } catch (err) {
+      await cleanupUpload(req.file.filename, storedName);
+      throw err;
+    }
 
     await logEvent({
       projectId: project._id,

@@ -9,10 +9,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const num = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
 
 const isProd = process.env.NODE_ENV === 'production';
+const hasSupabaseUrl = Boolean(process.env.SUPABASE_URL);
+const hasSupabaseKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 if (isProd && (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'change-me-to-a-long-random-string')) {
   // eslint-disable-next-line no-console
   console.warn('[config] WARNING: JWT_SECRET is not set. Set a strong secret before deploying.');
+}
+if (isProd && hasSupabaseUrl !== hasSupabaseKey) {
+  throw new Error('Set both SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY, or leave both unset.');
+}
+if (isProd && !hasSupabaseUrl) {
+  // eslint-disable-next-line no-console
+  console.warn('[config] WARNING: Supabase Storage is not configured. Render uploads are ephemeral.');
 }
 
 export const env = {
