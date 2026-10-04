@@ -321,6 +321,37 @@ All routes are prefixed with `/api` and require the auth cookie unless noted.
 - CSV export neutralizes spreadsheet formula injection
 - No secrets in code — everything via `.env` (`JWT_SECRET` is the only required one)
 
+## Vercel + Render deployment
+
+Deploy `client/` as a Vite project on Vercel and `server/` as a Node web service on
+Render. Use MongoDB Atlas for `MONGODB_URI`.
+
+### Vercel
+
+- Root directory: `client`
+- Build command: `npm run build`
+- Output directory: `dist`
+- Environment variable: `VITE_API_URL=https://<your-render-service>.onrender.com`
+
+`VITE_API_URL` is embedded at build time. Redeploy Vercel after changing it. Keep it
+empty for local development, where Vite proxies `/api` to the local server.
+
+### Render
+
+- Root directory: `server`
+- Build command: `npm ci`
+- Start command: `npm start`
+- Health check path: `/api/health`
+- Required environment variables: `NODE_ENV=production`, `MONGODB_URI`, `JWT_SECRET`,
+  and `CLIENT_ORIGIN=https://<your-vercel-app>.vercel.app`
+- Optional AI variables: `AI_PROVIDER=hf`, `HF_TOKEN`, `HF_MODEL`, `HF_API_URL`, and
+  `HF_EMBEDDING_URL`; `AI_PROVIDER=rule` is the default and needs no external token.
+
+Production authentication uses secure cross-site cookies because the frontend and API
+are hosted on different domains. Uploaded PDFs currently use the Render filesystem,
+which is ephemeral; use object storage such as Cloudinary, S3, or Cloudflare R2 before
+relying on uploaded files across restarts or redeployments.
+
 ---
 
 ## Troubleshooting

@@ -9,7 +9,7 @@ import {
   Sparkles,
   FileText,
 } from 'lucide-react';
-import { api } from '../api.js';
+import { api, apiUrl } from '../api.js';
 import {
   Badge,
   Button,
@@ -129,7 +129,7 @@ export default function PaperDetail() {
                 Re-run AI analysis
               </Button>
               {paper.file?.storedName ? (
-                <a href={`/api/papers/${id}/pdf`} target="_blank" rel="noreferrer">
+                <a href={apiUrl(`/api/papers/${id}/pdf`)} target="_blank" rel="noreferrer">
                   <Button size="sm" variant="secondary" icon={Download}>
                     Download PDF
                   </Button>

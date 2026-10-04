@@ -9,7 +9,7 @@ import {
   Trash2,
   CheckCircle2,
 } from 'lucide-react';
-import { api } from '../api.js';
+import { api, apiUrl } from '../api.js';
 import {
   Badge,
   Button,
@@ -231,7 +231,7 @@ export default function PapersTab({ projectId, onChanged }) {
                   Re-run
                 </Button>
                 {p.hasFile ? (
-                  <a href={`/api/papers/${p.id}/pdf`} target="_blank" rel="noreferrer">
+                  <a href={apiUrl(`/api/papers/${p.id}/pdf`)} target="_blank" rel="noreferrer">
                     <Button size="sm" variant="ghost" icon={Download}>
                       PDF
                     </Button>

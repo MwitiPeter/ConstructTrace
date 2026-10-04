@@ -12,7 +12,7 @@ export function signToken(user) {
 export function setAuthCookie(res, token) {
   res.cookie(AUTH_COOKIE, token, {
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: env.isProd ? 'none' : 'lax',
     secure: env.isProd,
     maxAge: tokenCookieMaxAge(),
     path: '/',
@@ -20,7 +20,12 @@ export function setAuthCookie(res, token) {
 }
 
 export function clearAuthCookie(res) {
-  res.clearCookie(AUTH_COOKIE, { httpOnly: true, sameSite: 'lax', secure: env.isProd, path: '/' });
+  res.clearCookie(AUTH_COOKIE, {
+    httpOnly: true,
+    sameSite: env.isProd ? 'none' : 'lax',
+    secure: env.isProd,
+    path: '/',
+  });
 }
 
 /** Reads and verifies the JWT from the http-only cookie (or Authorization header). */

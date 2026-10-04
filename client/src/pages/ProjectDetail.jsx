@@ -11,7 +11,7 @@ import {
   FileJson,
   Table2,
 } from 'lucide-react';
-import { api } from '../api.js';
+import { api, apiUrl } from '../api.js';
 import {
   Badge,
   Button,
@@ -147,17 +147,17 @@ export default function ProjectDetail() {
               <Button variant="secondary" size="sm" icon={Pencil} onClick={openEdit}>
                 Edit
               </Button>
-              <a href={`/api/projects/${id}/export?format=json`}>
+              <a href={apiUrl(`/api/projects/${id}/export?format=json`)}>
                 <Button size="sm" variant="secondary" icon={FileJson}>
                   JSON
                 </Button>
               </a>
-              <a href={`/api/projects/${id}/export?format=csv&entity=suggestions`}>
+              <a href={apiUrl(`/api/projects/${id}/export?format=csv&entity=suggestions`)}>
                 <Button size="sm" variant="secondary" icon={Table2}>
                   CSV suggestions
                 </Button>
               </a>
-              <a href={`/api/projects/${id}/export?format=csv&entity=constructs`}>
+              <a href={apiUrl(`/api/projects/${id}/export?format=csv&entity=constructs`)}>
                 <Button size="sm" variant="secondary" icon={Download}>
                   CSV constructs
                 </Button>
